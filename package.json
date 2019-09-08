@@ -9,6 +9,8 @@
     "babel-preset-env": "^1.7.0",
     "cheerio": "^1.0.0-rc.3",
     "config": "^3.2.2",
+    "express": "^4.17.1",
+    "mongoose": "^5.6.11",
     "needle": "^2.4.0",
     "node": "^12.8.1",
     "node-telegram-bot-api": "^0.30.0"
