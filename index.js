@@ -10,18 +10,10 @@ const Cheerio = require('cheerio');
 const TOKEN = Config.get('token');
 
 const bot = new TelegramBot(TOKEN, {
-    webHook: {
-		port: 3000
-	}
+	polling: true
 });
 
-bot.setWebHook(`${Config.get('https')}/bot${TOKEN}`)
-
-//console.log(bot);
-
-
 const timer = 1000 * 5;
-
 
 const rendering = () => { // Рендеринг ссылок
 	db.User.find({}, (err, users) => {
@@ -66,6 +58,17 @@ const rendering = () => { // Рендеринг ссылок
 									});
 								}else{
 									console.log(`user ${value._id} get err in ${ind} link`);
+									db.User.find({chatID: value.chatID}, (err, user) => {
+		
+										let curChange = user[0].links;
+										console.log(`I'm dell ${curChange[ind]} with user ${value._id}`);
+										curChange.splice(ind, 1);
+										db.User.updateOne(
+											{ chatID: value.chatID },
+											{ $set: { links: curChange} }
+										).exec();
+										bot.sendMessage(value.chatID, `Я удалил вашу запись ${val.links[ind]}, тк незнаю почему`)
+									});
 								}
 							}
 						});
@@ -77,6 +80,8 @@ const rendering = () => { // Рендеринг ссылок
 rendering();
 
 let mod = 0; // 0 - стандартный мод, 2 - мод добавления ссылок
+
+bot.on("polling_error", (err) => console.log(err));
 
 bot.on('message', msg => { // Клавиатура и весь функционал
 	const { id } = msg.chat;
@@ -120,11 +125,11 @@ bot.on('message', msg => { // Клавиатура и весь функцион�
 		}
 	}else if ( mod === 1) {
 		if (msg.text.includes('olx') && !msg.text.includes('obyavlenie') && !msg.text.includes('account') && !msg.text.includes('m.olx')){
-		let curLink = msg.text;
-			if (msg.textincludes('http://')) {
+			let curLink = msg.text;
+			if (msg.text.includes('http://')) {
 				curLink = curLink.replace('http', 'httpx');
 			}
-			if (msg.textincludes('//olx')) {
+			if (msg.text.includes('//olx')) {
 				curLink = curLink.replace('//olx', '//www.olx');
 			}
 			db.User.updateOne(
@@ -189,7 +194,6 @@ bot.on('callback_query', query => { // Удаление ссылки с БД. О
 			{ chatID: id },
 			{ $set: { links: curChange} }
 		).exec();
-		
 	});
     bot.sendMessage(id, 'Ссыдка Удалена');
 });
