@@ -10,8 +10,12 @@ const Cheerio = require('cheerio');
 const TOKEN = Config.get('token');
 
 const bot = new TelegramBot(TOKEN, {
-    polling: true
+    webHook: {
+		port: 3000
+	}
 });
+
+bot.setWebHook(`${Config.get('https')}/bot${TOKEN}`)
 
 //console.log(bot);
 
