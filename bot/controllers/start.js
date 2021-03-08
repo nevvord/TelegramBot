@@ -1,7 +1,7 @@
 const { Types } = require('mongoose')
 module.exports = async (msg, match) => {
-  console.log(msg)
   const keyboard = [
+    ['Добавить ссылку'],
     ['Мои ссылки', 'Контакты']
   ]
 

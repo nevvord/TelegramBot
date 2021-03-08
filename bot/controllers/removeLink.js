@@ -4,8 +4,8 @@ module.exports = async query => {
     const data = JSON.parse(query.data)
     if (!data) return bot.sendMessage(query.from.id, 'data required')
     const user = await db.users.findOne({ chat: query.from.id })
-    console.log(user.links[0]._id, data._id, user.links[0]._id != data._id)
     user.links = user.links.filter(link => link._id != data._id)
+    user.usage--
     await user.save()
     bot.sendMessage(query.from.id, 'Ссылка удалена')
   } catch (error) {

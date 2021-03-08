@@ -1,11 +1,12 @@
 module.exports = async (msg, match) => {
-  console.log(msg.text.split('/').length)
-  if (!msg.text.includes('/q-') && msg.text.split('/').length < 7)
-    return bot.sendMessage(msg.from.id, 'Невереный форма сслылки, добавте ссылку с поисковой страницы olx')
+  if (!msg.text.includes('/q-') && msg.text.split('/').length < 5)
+    return bot.sendMessage(msg.from.id, 'Невереный формат сслылки, добавьте ссылку с поисковой страницы olx')
   try {
     const user = await db.users.findOne({ chat: msg.from.id })
-    const url = msg.text.replace(/m./, '')
+    if (user.limit == user.usage) return bot.sendMessage(user.chat, 'Достигнут лимит ссылок. Максимум 2 ссылки.')
+    const url = msg.text.replace(/m\./, '')
     user.links.push({ url })
+    user.usage++
     await user.save()
     bot.sendMessage(user.chat, 'Ссылка добавлена успешено')
   } catch (error) {
