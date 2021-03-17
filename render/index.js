@@ -52,5 +52,5 @@ const puppeteer = require('puppeteer')
 	}
 
 	setInterval(renderingPremium, 3000)
-	setInterval(renderingDefault, 60000)
+	setInterval(renderingDefault, 15000)
 
