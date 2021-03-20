@@ -8,7 +8,7 @@ module.exports = (mongoose, conn) =>
     links: [{
       id: mongoose.Schema.Types.ObjectId,
       url: String,
-      last: String,
+      last: Array,
       fail: { type: Number, default: 0 }
     }],
     firstName: String,

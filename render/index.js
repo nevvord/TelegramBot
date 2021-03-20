@@ -1,56 +1,83 @@
 const axios = require('axios')
 const cheerio = require('cheerio')
-// const needle = require('needle')
-const puppeteer = require('puppeteer')
+// const chieldProcess = require('child_process')
+// const { PythonShell } = require('python-shell')
 
-	const userLinksGetter = async function (user) {
-		user.links.forEach(async (link, index) => {
-			try {
-				// await page.goto(link.url)
-				// const test = await page.$('#offers_table a.linkWithHash')
-				const response = await axios.get(link.url, { headers: {'User-Agent': 'Mozilla/5.0'} })
-				const $ = await cheerio.load(response.data)
-				const addLink = await $('#offers_table a.linkWithHash').first().attr('href')
-				let validLink = addLink.replace(/\?.*/, '')
-				validLink = validLink.replace(/\#.*/, '')
-				if (link.last == validLink) return ''
-				const title = await $('#offers_table h3 a.linkWithHash strong').first().text()
-				const img = await $('#offers_table .fleft').first().attr('src')
-				const price = await $('#offers_table .td-price .price strong').first().text()
-				const city = await $('#offers_table .bottom-cell small span').first().text()
-				const body = `*${title}* \n*Город:* ${city} \n*Цена:* ${price} \n[ОТКРЫТЬ](${validLink})`
-				user.links[index].last = validLink
-				user.links[index].fail = 0
-				await user.save()
-				if (img) bot.sendPhoto(user.chat, img, {
+
+const pytonStarter = function (path, options) {
+	const start = new Date().getTime()
+	console.log('START ON: ', start)
+	const { PythonShell } = require('python-shell')
+	return new Promise((resolve, reject) => {
+		PythonShell.run(path, options, function (err, results) {
+			if (err) reject(err)
+			resolve(results[0])
+			const stop = new Date().getTime()
+			console.log('STOP ON:', stop)
+			console.log('DIFERENSE:', (stop - start) / 1000)
+		})
+	})
+}
+
+const userLinksGetter = async function (user) {
+	user.links.forEach(async (link, index) => {
+		const funStart = new Date().getTime()
+		console.log('\x1b[36m%s\x1b[0m', 'Function Start in: ', funStart);
+		try {
+			const options = {
+				mode: 'json',
+				args: [link.url]
+			}
+			const path = __dirname  + '/parser.py'
+			const pyResult = await pytonStarter(path, options)
+			const currArray = pyResult.reverse().filter(elem => !link.last.find(({ link }) => elem.link === link))
+			// const currArray = pyResult.filter(element => link.last.includes(element))
+			console.log("\x1b[5m", '=============================================')
+			console.log("\x1b[5m", 'PyResults: ', pyResult.length)
+			console.log("\x1b[5m", 'Includes: ', link.last.includes(pyResult[0]))
+			console.log("\x1b[5m", pyResult[0].title, '<==|==>', pyResult[pyResult.length - 1].title)
+			console.log("\x1b[5m", 'CurrArrayLength: ', currArray.length)
+			console.log("\x1b[5m", '=============================================')
+			currArray.forEach(async element => {
+				const body = `*${element.title}* \n*Город:* ${element.city} \n*Цена:* ${element.price} \n[ОТКРЫТЬ](${element.link})`
+				if (element.image) bot.sendPhoto(user.chat, element.image, {
 					parse_mode: 'Markdown',
 					caption: body
 				})
 				else bot.sendMessage(user.chat, body, {
 					parse_mode: 'Markdown'
 				})
-			} catch (error) {
-				user.links[index].fail++
-				if (user.links[index].fail >= 4) {
-					user.links = user.links.filter(element => element._id != link._id)
-					bot.sendMessage(user.chat, `Ваша ссылка была удаленна по причие некоректности. Вызвала ошибку запроса 4 раза. Ссылка: ${link.url}`)
-				}
-				await user.save()
-				console.error('USER: ', user._id, 'LINK ID: ', link._id, 'CODE: ', error.code, error.message)
+			})
+			const funStop = new Date().getTime()
+			console.log('\x1b[36m%s\x1b[0m', 'Function Stop in: ', funStop);
+			console.log('\x1b[36m%s\x1b[0m', 'Function Diferens: ', (funStop - funStart) / 1000);
+			if (currArray.length == 0) return
+			user.links[index].fail = 0
+			user.links[index].last = pyResult
+			await user.save()
+		} catch (error) {
+			user.links[index].fail++
+			if (user.links[index].fail >= 4) {
+				user.links = user.links.filter(element => element._id != link._id)
+				user.usage--
+				bot.sendMessage(user.chat, `Ваша ссылка была удаленна по причие некоректности. Вызвала ошибку запроса 4 раза. Ссылка: ${link.url}`)
 			}
-		})
-	}
-	
-	const renderingPremium = async function () { // Рендеринг ссылок премиума
-		const users = await db.users.find({ status: 'premium' })
-		users.forEach(userLinksGetter)
-	}
+			await user.save()
+			console.error('USER: ', user._id, 'LINK ID: ', link._id, 'CODE: ', error.code, error.message)
+		}
+	})
+}
 
-	const renderingDefault = async function () { // Рендеринг ссылок стандарта
-		const users = await db.users.find({ status: 'default' })
-		users.forEach(userLinksGetter)
-	}
+const renderingPremium = async function () { // Рендеринг ссылок премиума
+	const users = await db.users.find({ status: 'premium' })
+	users.forEach(userLinksGetter)
+}
 
-	setInterval(renderingPremium, 3000)
-	setInterval(renderingDefault, 15000)
+const renderingDefault = async function () { // Рендеринг ссылок стандарта
+	const users = await db.users.find({ status: 'default' })
+	users.forEach(userLinksGetter)
+}
+
+setInterval(renderingPremium, 3000)
+setInterval(renderingDefault, 15000)
 
