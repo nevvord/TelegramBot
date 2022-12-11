@@ -10,7 +10,7 @@
     "cheerio": "^1.0.0-rc.5",
     "config": "^3.3.3",
     "dotenv": "^8.2.0",
-    "express": "^4.17.1",
+    "express": "^4.17.3",
     "mongoose": "^5.11.15",
     "needle": "^2.6.0",
     "node": "^12.20.1",
